@@ -5,7 +5,6 @@ from decimal import *
 from typing import List
 from random import shuffle
 from math import ceil
-from util.text import print_progress_bar
 
 
 def float_round_to_zero(x):
@@ -116,10 +115,6 @@ def castro(n: int, m: int, v: callable, original: Any) -> List[float]:
     m_st_il = [[0 for i in n_set] for i in n_set]
 
     for l in n_set:
-        print_progress_bar(
-            (0 * n * n) + l * n + 1, 3 * n * n, prefix='Progress:',
-            suffix='Complete', length=50
-        )
         with mp.Pool() as pool:
             results = pool.starmap(
                 estimate_s_2_il,
@@ -136,19 +131,11 @@ def castro(n: int, m: int, v: callable, original: Any) -> List[float]:
             s_2_i_k_sum += float(p)
 
     for l in n_set:
-        print_progress_bar(
-            (1 * n * n) + l * n + 1, 3 * n * n, prefix='Progress:',
-            suffix='Complete', length=50
-        )
         for i in n_set:
             m_il = m * (s_2_il[l][i] ** 2) / s_2_i_k_sum
             m_st_il[l][i] = ceil(m_il - m_exp_il) if m_il > m_exp_il else 1
 
     for l in n_set:
-        print_progress_bar(
-            (2 * n * n) + l * n + 1, 3 * n * n, prefix='Progress:',
-            suffix='Complete', length=50
-        )
         with mp.Pool() as pool:
             results = pool.starmap(
                 estimate_sh_l_i, [[
@@ -180,10 +167,6 @@ def castro_interaction_index(n: int, m: int, v: callable, original: Any) -> List
     m_st_ijl = [[[0 for j in n_set] for i in n_set] for l in n_set]
 
     for l in n_set:
-        print_progress_bar(
-            (0 * n * n * n) + l * n * n + 1, 3 * n * n * n, prefix='Progress:',
-            suffix='Complete', length=50
-        )
         with mp.Pool() as pool:
             results = pool.starmap(
                 estimate_s_2_ijl,
@@ -205,10 +188,6 @@ def castro_interaction_index(n: int, m: int, v: callable, original: Any) -> List
                 s_2_ij_k_sum += float(q)
 
     for l in n_set:
-        print_progress_bar(
-            (1 * n * n * n) + l * n * n + 1, 3 * n * n * n, prefix='Progress:',
-            suffix='Complete', length=50
-        )
         for i in n_set:
             for j in n_set:
                 if j != i:
@@ -218,10 +197,6 @@ def castro_interaction_index(n: int, m: int, v: callable, original: Any) -> List
                         if m_ijl > m_exp_ijl else 1
 
     for l in n_set:
-        print_progress_bar(
-            (2 * n * n * n) + l * n * n + 1, 3 * n * n * n, prefix='Progress:',
-            suffix='Complete', length=50
-        )
         with mp.Pool() as pool:
             results = pool.starmap(
                 estimate_sh_l_ij,
