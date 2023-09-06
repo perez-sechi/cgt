@@ -1,17 +1,8 @@
-import os
-import sys
 from typing import Any
-
 from decimal import *
 from typing import List
 
-try:
-    file_dir = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    file_dir = "."
-
-sys.path.append(os.path.join(file_dir, "..", "..", "."))
-from solutions.sh_i import calculate_cost_sh_i, calculate_sh_i, float_round_to_zero
+from cgt_seccijr.sh_i import calculate_cost_sh_i, calculate_sh_i, float_round_to_zero
 
 
 def cost(n: int, c: callable, original: Any) -> List[List[float]]:
