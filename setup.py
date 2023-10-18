@@ -8,5 +8,9 @@ setup(
     author_email='secci.jr@gmail.com',
     license='MIT',
     packages=['cgt_seccijr'],
-    zip_safe=False
+    zip_safe=False,
+    install_requires=[
+        'scipy',
+        'multiprocess'
+    ]
 )
