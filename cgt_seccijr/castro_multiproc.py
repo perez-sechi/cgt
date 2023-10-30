@@ -6,11 +6,7 @@ from typing import List
 from random import shuffle
 from math import ceil
 
-
-def float_round_to_zero(x):
-    precision = getcontext().prec
-    lowest_num = Decimal(f"1e-{precision}")
-    return float(x) if abs(x) > lowest_num else 0
+from cgt_seccijr.util import float_round_to_zero
 
 
 def shuffle_x_O_i(l: int, i: int, n_set: list):

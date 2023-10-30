@@ -6,12 +6,6 @@ from math import factorial
 from itertools import combinations, chain
 
 
-def float_round_to_zero(x):
-    precision = getcontext().prec
-    lowest_num = Decimal(f"1e-{precision}")
-    return float(x) if abs(x) > lowest_num else 0
-
-
 def calculate_sh_i(
     i: int, n_set: list, v: callable, original: Any
 ):
