@@ -25,10 +25,10 @@ def calculate_interaction_ij(
 
         for subset in s_minus_ij_subsets:
             sublist = list(subset)
-            mu_sublist = Decimal(v(n_minus_ij, sublist, original))
-            mu_sublist_plus_i = Decimal(v(n_minus_ij, sublist + [i], original))
-            mu_sublist_plus_j = Decimal(v(n_minus_ij, sublist + [j], original))
-            mu_sublist_plus_ij = Decimal(v(n_minus_ij, sublist + [i, j], original))
+            mu_sublist = Decimal(v(n_set, sublist, original))
+            mu_sublist_plus_i = Decimal(v(n_set, sublist + [i], original))
+            mu_sublist_plus_j = Decimal(v(n_set, sublist + [j], original))
+            mu_sublist_plus_ij = Decimal(v(n_set, sublist + [i, j], original))
             interaction_ij += zeta_k * (mu_sublist_plus_ij - mu_sublist_plus_i - mu_sublist_plus_j + mu_sublist)
 
     return i, j, float_round_to_zero(interaction_ij)
