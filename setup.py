@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 setup(
     name='cgt_seccijr',
     version='0.0.3',
@@ -8,7 +8,7 @@ setup(
     author='Carlos I. Pérez-Sechi',
     author_email='secci.jr@gmail.com',
     license='MIT',
-    packages=['cgt_seccijr'],
+    packages=find_packages(),
     zip_safe=False,
     install_requires=[
         'scipy',
