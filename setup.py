@@ -1,7 +1,7 @@
 from setuptools import setup
 setup(
     name='cgt_seccijr',
-    version='0.0.2',
+    version='0.0.3',
     description='Cooperative Game Theory Visualization Tools',
     url='#',
     author='Carlos I. Pérez-Sechi',
