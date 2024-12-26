@@ -2,7 +2,7 @@ from setuptools import setup
 setup(
     name='cgt_seccijr',
     version='0.0.2',
-    description='Cooperative Game Theory solutions package',
+    description='Cooperative Game Theory Visualization Tools',
     url='#',
     author='Carlos I. Pérez-Sechi',
     author_email='secci.jr@gmail.com',
@@ -11,6 +11,18 @@ setup(
     zip_safe=False,
     install_requires=[
         'scipy',
-        'multiprocess'
+        'multiprocess',
+        'matplotlib',
+        'numpy',
+        'scikit-learn',
+        'shap',
+        'networkx',
+        'nbconvert',
+        'seaborn',
+        'pingouin',
+        'statsmodels',
+        'nbconvert',
+        'setuptools',
+        'pytest'
     ]
 )

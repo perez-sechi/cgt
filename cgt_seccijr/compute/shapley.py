@@ -2,8 +2,8 @@ from typing import Any
 from decimal import *
 from typing import List
 
-from cgt_seccijr.util import float_round_to_zero
-from cgt_seccijr.sh_i import calculate_cost_sh_i, calculate_sh_i
+from cgt_seccijr.util.float import float_round_to_zero
+from cgt_seccijr.compute.sh_i import calculate_cost_sh_i, calculate_sh_i
 
 
 def cost(n: int, c: callable, original: Any) -> List[List[float]]:
