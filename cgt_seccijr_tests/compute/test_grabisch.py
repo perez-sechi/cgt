@@ -1,5 +1,5 @@
 import unittest
-from cgt_seccijr.grabisch import calculate_interaction_ij
+from cgt_seccijr.compute.grabisch import calculate_interaction_ij
 
 
 class TestGrabisch(unittest.TestCase):
