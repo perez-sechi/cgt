@@ -1,10 +1,13 @@
 from cgt_seccijr.exploration.schema import is_categorical
 
-import shap
 import os
 import sys
+import shap
 import numpy as np
+import pandas as pd
+import seaborn as sns
 import matplotlib.pylab as pl
+import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
 
@@ -534,3 +537,32 @@ def plot_shap_lorenz_curve(variable_name, X, shap_values, n_bins):
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
 
     pl.show()
+
+def violin_plot(
+    df: pd.DataFrame,
+    x: str,
+    y: str,
+    y_title: str
+):
+    '''
+    Plot the SHAP values for each category of the input variable.
+    Parameters:
+    df: pandas.DataFrame
+        The input data.
+    x: str
+        The name of the variable.
+    y: str
+        The name of the SHAP values.
+    y_title: str
+        The title of the y axis.
+    '''
+    fig, ax = plt.subplots(1, 1, figsize=(8, 4))
+    cmap = shap.plots.colors._colors.red_blue
+    colors = cmap(np.linspace(0, 1, len(df[x].unique())))
+    bp = sns.violinplot(x=x, y=y, data=df, ax=ax, palette=colors, fill=False)
+    bp.tick_params(labelsize=6)
+    bp.set(xlabel=x, ylabel=y_title)
+    bp.spines['top'].set_visible(False)
+    bp.spines['right'].set_visible(False)
+    bp.spines['left'].set_visible(False)
+    bp.grid(visible=True, axis='y', linestyle=':', linewidth=0.5, alpha=0.3)
