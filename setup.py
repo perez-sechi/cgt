@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 setup(
     name='cgt_seccijr',
-    version='0.0.4',
+    version='0.0.7',
     description='Cooperative Game Theory Visualization Tools',
     url = 'https://github.com/seccijr/cgt',
-    download_url='https://github.com/seccijr/cgt/archive/refs/tags/0.0.6.tar.gz',
+    download_url='https://github.com/seccijr/cgt/archive/refs/tags/0.0.7.tar.gz',
     author='Carlos I. Pérez-Sechi',
     author_email='secci.jr@gmail.com',
     license='MIT',
