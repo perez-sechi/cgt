@@ -1,5 +1,5 @@
 import unittest
-from cgt_perez-sechi.compute.grabisch import calculate_interaction_ij
+from cgt_perezsechi.compute.grabisch import calculate_interaction_ij
 
 
 class TestGrabisch(unittest.TestCase):

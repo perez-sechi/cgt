@@ -1,5 +1,5 @@
 """
-cgt_perez-sechi.
+cgt_perezsechi.
 
 """
 

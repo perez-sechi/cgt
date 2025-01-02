@@ -4,7 +4,7 @@ from decimal import *
 from math import factorial
 from itertools import combinations
 
-from cgt_perez-sechi.util.float import float_round_to_zero
+from cgt_perezsechi.util.float import float_round_to_zero
 
 
 def calculate_interaction_ij(
