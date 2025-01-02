@@ -6,7 +6,7 @@ from typing import List
 from random import shuffle
 from math import ceil
 
-from cgt_seccijr.util.float import float_round_to_zero
+from cgt_perez-sechi.util.float import float_round_to_zero
 
 
 def shuffle_x_O_i(l: int, i: int, n_set: list):

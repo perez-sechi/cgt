@@ -13,12 +13,12 @@ A Python library designed to support Cooperative Game Theory computations and vi
   - [Dependencies](#dependencies)
   - [Usage](#usage)
   - [Modules Overview](#modules-overview)
-    - [Computational Module cgt\_seccijr.compute](#computational-module-cgt_seccijrcompute)
-    - [Exploration Module cgt\_seccijr.exploration](#exploration-module-cgt_seccijrexploration)
-    - [Manipulation Module cgt\_seccijr.manipulation](#manipulation-module-cgt_seccijrmanipulation)
-    - [Modeling Module cgt\_seccijr.modeling](#modeling-module-cgt_seccijrmodeling)
-    - [Visualization Module cgt\_seccijr.visualization](#visualization-module-cgt_seccijrvisualization)
-    - [Utility Functions cgt\_seccijr.util](#utility-functions-cgt_seccijrutil)
+    - [Computational Module cgt\_perez-sechi.compute](#computational-module-cgt_perez-sechicompute)
+    - [Exploration Module cgt\_perez-sechi.exploration](#exploration-module-cgt_perez-sechiexploration)
+    - [Manipulation Module cgt\_perez-sechi.manipulation](#manipulation-module-cgt_perez-sechimanipulation)
+    - [Modeling Module cgt\_perez-sechi.modeling](#modeling-module-cgt_perez-sechimodeling)
+    - [Visualization Module cgt\_perez-sechi.visualization](#visualization-module-cgt_perez-sechivisualization)
+    - [Utility Functions cgt\_perez-sechi.util](#utility-functions-cgt_perez-sechiutil)
   - [Testing](#testing)
   - [License](#license)
   - [Contact](#contact)
@@ -28,7 +28,7 @@ A Python library designed to support Cooperative Game Theory computations and vi
 ## Project Structure
 
 ```plaintext
-cgt_seccijr/ # Core library
+cgt_perez-sechi/ # Core library
 ├── compute/ # Shapley, Cost, Grabisch, etc.
 ├── exploration/ # Sampling, schema, importance
 ├── manipulation/ # Data transformations, normalizations
@@ -37,7 +37,7 @@ cgt_seccijr/ # Core library
 ├── util/ # Helper utilities (float rounding, etc.)
 └── __init__.py # Init for main package
 
-cgt_seccijr_tests/ # Tests for library modules
+cgt_perez-sechi_tests/ # Tests for library modules
 ├── compute/ # Tests for compute module
 ├── modeling/ # Tests for modeling module
 └── __init__.py
@@ -70,7 +70,7 @@ README.md # Project documentation (this file)
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/seccijr/cgt.git
+   git clone https://github.com/perez-sechi/cgt.git
    cd cgt
    ```
 
@@ -101,7 +101,7 @@ Below are some high-level usage examples:
 Computing Shapley Values
 
 ```python
-from cgt_seccijr.compute.shapley import exact
+from cgt_perez-sechi.compute.shapley import exact
 
 # Example cost function
 def v(n_set, coalition, data):
@@ -115,7 +115,7 @@ print("Shapley values:", results)
 Grabisch Interaction
 
 ```python
-from cgt_seccijr.compute.grabisch import calculate_interaction_ij
+from cgt_perez-sechi.compute.grabisch import calculate_interaction_ij
 
 i, j, value = calculate_interaction_ij(
     i=0,
@@ -131,7 +131,7 @@ Visualizing Graph
 
 ```python
 import pandas as pd
-from cgt_seccijr.visualization.graph import draw
+from cgt_perez-sechi.visualization.graph import draw
 
 psi_mock = pd.DataFrame({'value': [1.0, -0.5, 0.3]})
 r_mock = pd.DataFrame([
@@ -149,46 +149,46 @@ pytest
 
 ## Modules Overview
 
-### Computational Module cgt_seccijr.compute
+### Computational Module cgt_perez-sechi.compute
 Contains functionality to compute:
 
 - Shapley values (singlethreaded or via multiprocessing)
 - Cost-based Shapley values
 - Grabisch interaction indices
 
-### Exploration Module cgt_seccijr.exploration
+### Exploration Module cgt_perez-sechi.exploration
 Helps in:
 
 - Feature importance ranking (SHAP)
 - Data sampling strategies
 - Identifying relevant subsets
 
-### Manipulation Module cgt_seccijr.manipulation
+### Manipulation Module cgt_perez-sechi.manipulation
 Provides:
 
 - Interval coding (coding.py)
 - Normalization utilities (e.g., norm.py)
 
-### Modeling Module cgt_seccijr.modeling
+### Modeling Module cgt_perez-sechi.modeling
 Focuses on:
 
 - Community detection
 - Clustering approaches
 
-### Visualization Module cgt_seccijr.visualization
+### Visualization Module cgt_perez-sechi.visualization
 Includes tools for:
 
 - Graph drawing with thresholds and arcs
 - Plotting SHAP distributions and interactions
 
-### Utility Functions cgt_seccijr.util
+### Utility Functions cgt_perez-sechi.util
 
 - float_round_to_zero safely rounds small decimal values to zero
 - Exposing imports from other subpackages
 
 ## Testing
 
-We use pytest for unit testing. The cgt_seccijr_tests folder houses tests for each main package module. To execute all tests:
+We use pytest for unit testing. The cgt_perez-sechi_tests folder houses tests for each main package module. To execute all tests:
 
 ```bash
 pytest
@@ -197,7 +197,7 @@ pytest
 Optionally, you can specify a folder or filename:
 
 ```bash
-pytest cgt_seccijr_tests/compute
+pytest cgt_perez-sechi_tests/compute
 ```
 
 ## License

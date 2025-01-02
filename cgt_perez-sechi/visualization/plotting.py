@@ -1,4 +1,4 @@
-from cgt_seccijr.exploration.schema import is_categorical
+from cgt_perez-sechi.exploration.schema import is_categorical
 
 import os
 import sys
