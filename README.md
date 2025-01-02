@@ -70,7 +70,7 @@ README.md # Project documentation (this file)
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/perezsechi/cgt.git
+   git clone https://github.com/perez-sechi/cgt.git
    cd cgt
    ```
 
