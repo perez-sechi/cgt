@@ -3,7 +3,7 @@ setup(
     name='cgt_perezsechi',
     version='0.0.8',
     description='Cooperative Game Theory Visualization Tools',
-    url = 'https://github.com/perezsechi/cgt',
+    url = 'https://github.com/perez-sechi/cgt',
     download_url='https://github.com/perezsechi/cgt/archive/refs/tags/0.0.8.tar.gz',
     author='Carlos I. Pérez-Sechi',
     author_email='ci.perez@yahoo.es',
