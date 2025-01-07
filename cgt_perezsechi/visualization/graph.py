@@ -515,13 +515,12 @@ def draw_clusters(
                 arrowstyle='|-|'
             )
     else:
-        nx.draw_networkx_edges(
-            g, pos,
-            edge_color=edge_color,
-            width=edge_weights,
-            node_size=[x + 400 for x in node_size],
-            connectionstyle=f'arc3,rad={arch_radius}',
-        )
+        for node in g.nodes():
+            x, y = label_pos[node]
+            plt.text(
+                x, y, s=node,
+                horizontalalignment='center'
+            )
 
     if len(clusters) > 0:
         ax = plt.gca()
