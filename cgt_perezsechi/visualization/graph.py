@@ -1,6 +1,8 @@
 import copy
 import numpy as np
 import networkx as nx
+import matplotlib 
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from matplotlib.lines import Line2D
@@ -232,12 +234,15 @@ def draw(
             connectionstyle=f'arc3,rad={arch_radius}',
         )
 
+    axis = plt.gca()
+    axis.set_xlim([x for x in axis.get_xlim()])
+    axis.set_ylim([y for y in axis.get_ylim()])
     plt.axis('off')
     plt.show()
 
     if output_path != None:
         print('Saving the graph to', output_path)
-        plt.savefig(output_path, format='jpg', bbox_inches='tight')
+        plt.savefig(output_path, format='jpg', dpi=1200, bbox_inches='tight')
 
     return g
 
@@ -525,12 +530,15 @@ def draw_clusters(
             loc='center left', bbox_to_anchor=(1, 0.5)
         )
 
+    axis = plt.gca()
+    axis.set_xlim([x for x in axis.get_xlim()])
+    axis.set_ylim([y for y in axis.get_ylim()])
     plt.tight_layout()
     plt.axis('off')
     plt.show()
 
     if output_path != None:
         print('Saving the graph to', output_path)
-        plt.savefig(output_path, format='jpg', bbox_inches='tight')
+        plt.savefig(output_path, format='jpg', dpi=1200, bbox_inches='tight')
 
     return g
