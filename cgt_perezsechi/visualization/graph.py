@@ -195,13 +195,12 @@ def draw(
                 horizontalalignment='center'
             )
     else:
-        nx.draw_networkx_labels(
-            g, label_pos,
-            labels={node: node for node in g.nodes()},
-            font_size=10,
-            font_color=label_color,
-            font_weight=label_weight
-        )
+        for node in g.nodes():
+            x, y = label_pos[node]
+            plt.text(
+                x, y, s=node,
+                horizontalalignment='center'
+            )
 
     if symmetric:
         if arched:
@@ -226,12 +225,13 @@ def draw(
                 arrowstyle='|-|'
             )
     else:
-        for node in g.nodes():
-            x, y = label_pos[node]
-            plt.text(
-                x, y, s=node,
-                horizontalalignment='center'
-            )
+        nx.draw_networkx_edges(
+            g, pos,
+            edge_color=edge_color,
+            width=edge_weights,
+            node_size=[x + 400 for x in node_size],
+            connectionstyle=f'arc3,rad={arch_radius}',
+        )
 
     axis = plt.gca()
     axis.set_xlim([x for x in axis.get_xlim()])
@@ -483,13 +483,12 @@ def draw_clusters(
                 horizontalalignment='center'
             )
     else:
-        nx.draw_networkx_labels(
-            g, label_pos,
-            labels={node: node for node in g.nodes()},
-            font_size=10,
-            font_color=label_color,
-            font_weight=label_weight
-        )
+        for node in g.nodes():
+            x, y = label_pos[node]
+            plt.text(
+                x, y, s=node,
+                horizontalalignment='center'
+            )
 
     if symmetric:
         if arched:
@@ -514,12 +513,13 @@ def draw_clusters(
                 arrowstyle='|-|'
             )
     else:
-        for node in g.nodes():
-            x, y = label_pos[node]
-            plt.text(
-                x, y, s=node,
-                horizontalalignment='center'
-            )
+        nx.draw_networkx_edges(
+            g, pos,
+            edge_color=edge_color,
+            width=edge_weights,
+            node_size=[x + 400 for x in node_size],
+            connectionstyle=f'arc3,rad={arch_radius}',
+        )
 
     if len(clusters) > 0:
         ax = plt.gca()
