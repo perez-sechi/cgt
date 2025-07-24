@@ -380,11 +380,19 @@ def draw_clusters(
         if num_clusters == 1:
             cluster_centers = [(0, 0)]
         elif num_clusters == 2:
-            cluster_centers = [(-1.5, 0), (1.5, 0)]
+            cluster_centers = [(-3.0, 0), (3.0, 0)]
+        elif num_clusters == 3:
+            # Triangle arrangement for better separation
+            import math
+            cluster_centers = [
+                (0, 3.0),           # Top
+                (-2.6, -1.5),       # Bottom left
+                (2.6, -1.5)         # Bottom right
+            ]
         else:
             # Arrange clusters in a circle for better separation
             import math
-            radius = 2.0
+            radius = 4.0
             for i in range(num_clusters):
                 angle = 2 * math.pi * i / num_clusters
                 x = radius * math.cos(angle)
@@ -393,7 +401,7 @@ def draw_clusters(
         
         # Position nodes within each cluster
         pos = {}
-        cluster_scale = 0.5  # Scale factor for intra-cluster layout
+        cluster_scale = 0.8  # Scale factor for intra-cluster layout
         
         for center, comm in zip(cluster_centers, clusters):
             if len(comm) == 1:
