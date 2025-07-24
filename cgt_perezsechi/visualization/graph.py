@@ -254,8 +254,8 @@ def get_cmap(n, name='hsv'):
     return plt.cm.get_cmap(name, n + 1)
 
 def draw_clusters(
-    psi, r, clusters=[], positive_alpha=0, negative_alpha=0, positive_beta=0,
-    negative_beta=0, symmetric=True, arched=False, arch_radius=0.2,
+    psi, r, clusters=[], positive_alpha=0.0, negative_alpha=0.0, positive_beta=0.0,
+    negative_beta=0.0, symmetric=True, arched=False, arch_radius=0.2,
     node_size_upper_limit=1500, layout='spring', label_margin=None,
     node_pos=None, label_pos=None, label_color='white',
     label_weight='normal', positive_color='black',
