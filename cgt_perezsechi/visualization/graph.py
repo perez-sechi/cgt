@@ -373,20 +373,44 @@ def draw_clusters(
         plt.margins(x=plot_margin, y=plot_margin)
 
     if len(clusters) > 0:
-        if layout == 'spring':
-            superpos = nx.spring_layout(g, scale=2.5)
+        # Create well-separated cluster centers
+        num_clusters = len(clusters)
+        cluster_centers = []
+        
+        if num_clusters == 1:
+            cluster_centers = [(0, 0)]
+        elif num_clusters == 2:
+            cluster_centers = [(-1.5, 0), (1.5, 0)]
         else:
-            superpos = pos
-
-        centers = list(superpos.values())
+            # Arrange clusters in a circle for better separation
+            import math
+            radius = 2.0
+            for i in range(num_clusters):
+                angle = 2 * math.pi * i / num_clusters
+                x = radius * math.cos(angle)
+                y = radius * math.sin(angle)
+                cluster_centers.append((x, y))
+        
+        # Position nodes within each cluster
         pos = {}
-        for center, comm in zip(centers, clusters):
-            pos.update(
-                nx.spring_layout(
-                    nx.subgraph(g, comm),
-                    center=center
-                )
-            )
+        cluster_scale = 0.5  # Scale factor for intra-cluster layout
+        
+        for center, comm in zip(cluster_centers, clusters):
+            if len(comm) == 1:
+                # Single node cluster - place at center
+                pos[comm[0]] = center
+            else:
+                # Multiple nodes - use spring layout with smaller scale
+                subgraph = nx.subgraph(g, comm)
+                if layout == 'circular' and len(comm) > 2:
+                    # Use circular layout for clusters with circular main layout
+                    cluster_pos = nx.circular_layout(subgraph, scale=cluster_scale)
+                else:
+                    cluster_pos = nx.spring_layout(subgraph, scale=cluster_scale)
+                
+                # Translate positions to cluster center
+                for node, (x, y) in cluster_pos.items():
+                    pos[node] = (center[0] + x, center[1] + y)
 
         legend_elements = []
         cmap = get_cmap(len(clusters))
