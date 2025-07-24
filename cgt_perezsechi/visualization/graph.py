@@ -373,8 +373,10 @@ def draw_clusters(
         plt.margins(x=plot_margin, y=plot_margin)
 
     if len(clusters) > 0:
-        # superpos = copy.deepcopy(pos)
-        superpos = nx.spring_layout(g, scale=2.5)
+        if layout == 'spring':
+            superpos = nx.spring_layout(g, scale=2.5)
+        else:
+            superpos = pos
 
         centers = list(superpos.values())
         pos = {}
