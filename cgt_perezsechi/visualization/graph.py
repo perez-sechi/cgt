@@ -424,7 +424,7 @@ def draw_clusters(
         legend_elements = []
         cmap = get_cmap(len(clusters))
         for cdx, cluster_nodes in enumerate(clusters):
-            color = cmap(cdx)
+            color = matplotlib.colors.rgb2hex(cmap(cdx))
             cluster_node_size = [node_size_dict[node] for node in cluster_nodes]
             nx.draw_networkx_nodes(
                 g, pos=pos, nodelist=cluster_nodes,
