@@ -11,7 +11,7 @@ def draw(
     psi, r, positive_alpha=0.0, negative_alpha=0.0, positive_beta=0.0,
     negative_beta=0.0, symmetric=True, arched=False, arch_radius=0.2,
     node_size_upper_limit=1500, layout='spring', label_margin=None,
-    node_pos=None, label_pos=None, label_color='white',
+    node_pos=None, label_pos=None, label_color=None,
     label_weight='normal', positive_color='black',
     negative_color='red', output_path=None, plot_margin=None,
     node_label_size_limit=500
@@ -126,7 +126,7 @@ def draw(
             labels={node: node for node in g.nodes(
             ) if node_size_dict[node] > node_label_size_limit},
             font_size=10,
-            font_color='white',
+            font_color='white' if label_color is None else label_color,
             font_weight='bold'
         )
         nx.draw_networkx_labels(
@@ -134,7 +134,7 @@ def draw(
             labels={node: node for node in g.nodes(
             ) if node_size_dict[node] == 0},
             font_size=10,
-            font_color='black',
+            font_color='black' if label_color is None else label_color,
             font_weight='bold'
         )
 
@@ -197,7 +197,7 @@ def draw(
         for node in g.nodes():
             x, y = label_pos[node]
             plt.text(
-                x, y, s=node,
+                x, y, s=node, color='black' if label_color is None else label_color,
                 horizontalalignment='center'
             )
 
