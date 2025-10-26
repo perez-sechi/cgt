@@ -8,12 +8,13 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
 def draw(
-    psi, r, positive_alpha=0.0, negative_alpha=0.0, positive_beta=0.0,
+    psi, r, psi_q25=None, psi_q75=None, r_q25=None, r_q75=None, 
+    positive_alpha=0.0, negative_alpha=0.0, positive_beta=0.0,
     negative_beta=0.0, symmetric=True, arched=False, arch_radius=0.2,
     node_size_upper_limit=1500, layout='spring', label_margin=None,
     node_pos=None, label_pos=None, label_color=None,
     label_weight=None, positive_color='black',
-    negative_color='red', output_path=None, plot_margin=None,
+    negative_color='red', uncertain_color='grey', output_path=None, plot_margin=None,
     node_label_size_limit=500
 ):
     '''
@@ -22,12 +23,17 @@ def draw(
     Parameters:
     psi (list(float)): Psi values
     r (list(list(float))): R values
+    psi_q25 (list(float)): Q25 percentile values for nodes (optional)
+    psi_q75 (list(float)): Q75 percentile values for nodes (optional)
+    r_q25 (list(list(float))): Q25 percentile values for edges (optional)
+    r_q75 (list(list(float))): Q75 percentile values for edges (optional)
     positive_alpha (float): alpha^{+} threshold
     negative_alpha (float): alpha^{-} threshold
     positive_beta (float): beta^{+} threshold
     negative_beta (float): beta^{-} threshold
     symmetric (bool): Defines the symmetry condition
     layout (str): Defines the Networkx drawing layout
+    uncertain_color (str): Color for uncertain/inconsistent sign values
 
     Returns:
     Graph: Networkx graph
@@ -49,6 +55,38 @@ def draw(
             return True
         else:
             return False
+    
+    def get_node_color(node):
+        """Determine node color based on Q25 and Q75 sign consistency"""
+        if psi_q25 is not None and psi_q75 is not None:
+            q25_val = psi_q25['q25'][node]
+            q75_val = psi_q75['q75'][node]
+            
+            if q25_val < 0 and q75_val < 0:
+                return negative_color
+            elif q25_val > 0 and q75_val > 0:
+                return positive_color
+            else:
+                return uncertain_color
+        else:
+            # Fallback to original logic
+            return negative_color if psi['value'][node] < 0 else positive_color
+    
+    def get_edge_color(u, v):
+        """Determine edge color based on Q25 and Q75 sign consistency"""
+        if r_q25 is not None and r_q75 is not None:
+            q25_val = r_q25[v][u]
+            q75_val = r_q75[v][u]
+            
+            if q25_val < 0 and q75_val < 0:
+                return negative_color
+            elif q25_val > 0 and q75_val > 0:
+                return positive_color
+            else:
+                return uncertain_color
+        else:
+            # Fallback to original logic
+            return negative_color if r[v][u] < 0 else positive_color
 
     r = r.copy().applymap(filter_edge)
     adjacency = r.copy().applymap(lambda x: 1 if x != 0 else 0)
@@ -63,10 +101,9 @@ def draw(
     g.remove_nodes_from(filtered_nodes)
 
     edges = g.edges()
-    edge_color = [
-        negative_color if r[v][u] < 0 else positive_color
-        for u, v in edges
-    ]
+    
+    # Determine edge colors based on Q25/Q75 sign consistency
+    edge_color = [get_edge_color(u, v) for u, v in edges]
 
     edge_weight_upper_limit = 3
     edge_weights = [
@@ -83,10 +120,8 @@ def draw(
     }
     node_size = list(node_size_dict.values())
 
-    node_color = [
-        negative_color if psi['value'][n] < 0 else positive_color
-        for n in nodes
-    ]
+    # Determine node colors based on Q25/Q75 sign consistency
+    node_color = [get_node_color(n) for n in nodes]
 
     if node_pos == None:
         if layout == 'kamada_kawai':
@@ -115,11 +150,14 @@ def draw(
     plt.figure()
     if plot_margin != None:
         plt.margins(x=plot_margin, y=plot_margin)
+    
+    # Draw nodes
     nx.draw_networkx_nodes(
         g, pos,
         node_size=node_size,
         node_color=node_color
     )
+    
     if label_pos == None:
         nx.draw_networkx_labels(
             g, pos,
@@ -201,6 +239,7 @@ def draw(
                 horizontalalignment='center'
             )
 
+    # Draw edges
     if symmetric:
         if arched:
             nx.draw_networkx_edges(
