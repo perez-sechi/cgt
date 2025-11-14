@@ -7,7 +7,7 @@ from cgt_perezsechi.util.float import float_round_to_zero
 from cgt_perezsechi.compute.sh_i import calculate_cost_sh_i, calculate_sh_i
 
 
-def cost(n: int, c: callable, original: Any) -> List[List[float]]:
+def cost(n: int, c: callable, original: Any) -> List[float]:
     n_set = list(range(n))
     sh_i = [0.0 for i in n_set]
 
@@ -23,7 +23,7 @@ def cost(n: int, c: callable, original: Any) -> List[List[float]]:
     return sh_i
 
 
-def cost_diff(n: int, c: callable, original: Any) -> List[List[float]]:
+def cost_diff(n: int, c: callable, original: Any) -> List[float]:
     n_set = list(range(n))
     sh_i = [0.0 for i in n_set]
 
@@ -54,7 +54,7 @@ def cost_diff(n: int, c: callable, original: Any) -> List[List[float]]:
     return sh_ij
 
 
-def exact(n: int, v: callable, original: Any) -> List[List[float]]:
+def exact(n: int, v: callable, original: Any) -> List[float]:
     n_set = list(range(n))
     sh_i = [0.0 for i in n_set]
 
@@ -70,7 +70,7 @@ def exact(n: int, v: callable, original: Any) -> List[List[float]]:
     return sh_i
 
 
-def exac_n_set(n_set: List[int], v: callable, original: Any) -> List[List[float]]:
+def exac_n_set(n_set: List[int], v: callable, original: Any) -> List[float]:
     sh_i = {}
 
     with mp.Pool() as pool:
@@ -85,7 +85,7 @@ def exac_n_set(n_set: List[int], v: callable, original: Any) -> List[List[float]
     return sh_i
 
 
-def exact_diff(n: int, v: callable, original: Any) -> List[List[float]]:
+def exact_diff(n: int, v: callable, original: Any) -> List[float]:
     n_set = list(range(n))
     sh_i = [0.0 for i in n_set]
 
