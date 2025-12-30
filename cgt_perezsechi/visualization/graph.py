@@ -284,12 +284,36 @@ def draw(
     return g
 
 
-def get_cmap(n, name='hsv'):
+def get_cmap(n):
     '''
-    Returns a function that maps each index in 0, 1, ..., n-1 to a distinct 
-    RGB color; the keyword argument name must be a standard mpl colormap name.
+    Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
+    RGB color using a predefined palette that excludes red and blue tones.
     '''
-    return plt.cm.get_cmap(name, n + 1)
+    import matplotlib.colors as mcolors
+
+    # Predefined colors excluding red and blue tones
+    # Includes: greens, yellows, browns, greys, oranges, purples
+    cluster_colors = [
+        '#2ECC71',  # Green
+        '#F39C12',  # Orange
+        '#9B59B6',  # Purple
+        '#F1C40F',  # Yellow
+        '#16A085',  # Teal/Green
+        '#8B4513',  # Brown
+        '#95A5A6',  # Grey
+        '#D4AC0D',  # Dark Yellow/Gold
+        '#27AE60',  # Dark Green
+        '#BA8B00',  # Dark Orange/Brown
+    ]
+
+    # Return only the colors needed (up to n)
+    colors_to_use = cluster_colors[:min(n, len(cluster_colors))]
+
+    # If more colors are needed than available, cycle through the list
+    if n > len(cluster_colors):
+        colors_to_use = [cluster_colors[i % len(cluster_colors)] for i in range(n)]
+
+    return mcolors.ListedColormap(colors_to_use)
 
 def draw_clusters(
     psi, r, clusters=[], positive_alpha=0.0, negative_alpha=0.0, positive_beta=0.0,
