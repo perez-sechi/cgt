@@ -275,11 +275,12 @@ def draw(
     axis.set_xlim([x for x in axis.get_xlim()])
     axis.set_ylim([y for y in axis.get_ylim()])
     plt.axis('off')
-    plt.show()
 
     if output_path != None:
         print('Saving the graph to', output_path)
         plt.savefig(output_path, format='jpg', dpi=1200, bbox_inches='tight')
+
+    plt.show()
 
     return g
 
@@ -630,10 +631,11 @@ def draw_clusters(
     axis.set_ylim([y for y in axis.get_ylim()])
     plt.tight_layout()
     plt.axis('off')
-    plt.show()
 
     if output_path != None:
         print('Saving the graph to', output_path)
         plt.savefig(output_path, format='jpg', dpi=1200, bbox_inches='tight')
+
+    plt.show()
 
     return g
