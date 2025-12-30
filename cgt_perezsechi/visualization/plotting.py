@@ -1,20 +1,17 @@
-from cgt_perezsechi.exploration.schema import is_categorical
-
-import os
-import sys
 import shap
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import matplotlib.pylab as pl
-import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
+from package.exploration.schema import is_categorical
 
-def shap_percentile_distribution_value(
+
+def shap_stats_at_variable_percentile(
     variable_index,
     X_variable,
     shap_values,
+    abs_shap_values,
     starting_percentile,
     ending_percentile
 ):
@@ -26,13 +23,27 @@ def shap_percentile_distribution_value(
     )
     idx_survivors = np.where(
         (X_variable >= starting_percentile_value)
-        & (X_variable < ending_percentile_value)
+        & (X_variable <= ending_percentile_value)
     )[0]
 
-    sum_shap_values = np.sum(shap_values[idx_survivors], axis=(0, 1))
-    top_variable_shap_values = shap_values[idx_survivors, variable_index]
+    abs_all_shap_sum = np.sum(abs_shap_values[idx_survivors], axis=(0, 1))
+    abs_variable_shap_sum = np.sum(
+        abs_shap_values[idx_survivors, variable_index]
+    )
+    abs_variable_shap_mean = np.mean(
+        abs_shap_values[idx_survivors, variable_index]
+    )
+    variable_shap_mean = np.mean(
+        shap_values[idx_survivors, variable_index]
+    )
 
-    return 100 * np.sum(top_variable_shap_values) / sum_shap_values
+    return {
+        "abs_all_shap_sum": abs_all_shap_sum,
+        "abs_variable_shap_sum": abs_variable_shap_sum,
+        "abs_variable_shap_mean": abs_variable_shap_mean,
+        "variable_shap_mean": variable_shap_mean,
+        "variable_label": (ending_percentile_value + starting_percentile_value) / 2
+    }
 
 
 def shap_interaction_percentile_distribution_value(
@@ -66,20 +77,36 @@ def shap_interaction_percentile_distribution_value(
     return 100 * np.sum(top_variable_interaction_shap_values) / sum_ineraction_shap_values
 
 
-def shap_category_distribution_value(
+def shap_stats_at_variable_category(
     category,
     variable_index,
     X_variable,
-    shap_values
+    shap_values,
+    abs_shap_values
 ):
     idx_survivors = np.where(
         X_variable == category
     )[0]
 
-    sum_shap_values = np.sum(shap_values[idx_survivors], axis=(0, 1))
-    top_variable_shap_values = shap_values[idx_survivors, variable_index]
+    abs_all_shap_sum = np.sum(abs_shap_values[idx_survivors], axis=(0, 1))
+    abs_variable_shap_sum = np.sum(
+        abs_shap_values[idx_survivors, variable_index]
+    )
+    abs_variable_shap_mean = np.mean(
+        abs_shap_values[idx_survivors, variable_index]
+    )
+    variable_shap_mean = np.mean(
+        shap_values[idx_survivors, variable_index]
+    )
 
-    return 100 * np.sum(top_variable_shap_values) / sum_shap_values
+    return {
+        "abs_all_shap_sum": abs_all_shap_sum,
+        "abs_variable_shap_sum": abs_variable_shap_sum,
+        "abs_variable_shap_mean": abs_variable_shap_mean,
+        "variable_shap_mean": variable_shap_mean,
+        "sample_length_ratio": len(idx_survivors) / len(X_variable)
+    }
+
 
 def plot_shap_categorical_distribution(variable_name, X, shap_values):
     X_variable = X[variable_name]
@@ -87,109 +114,233 @@ def plot_shap_categorical_distribution(variable_name, X, shap_values):
     if not is_categorical(X_variable):
         raise ValueError(f"The variable {variable_name} is not categorical")
 
-    variable_index = X.columns.get_loc(variable_name)
+
     X_unique = X_variable.unique()
-    
-    variable_shap_values = shap_values[:, variable_index]
+    n_bins = len(X_unique)
+    n_ticks = np.arange(n_bins)
 
-    fig, ax = pl.subplots()
-    width = 0.5
+    abs_shap_values = np.abs(shap_values)
+    abs_shap_relevance = np.zeros(n_bins)
+    abs_shap_mean_vs_max = np.zeros(n_bins)
+    shap_mean = np.zeros(n_bins)
+    variable_index = X.columns.get_loc(variable_name)
+    variable_sample_percentage = np.zeros(n_bins)
+    abs_variable_shap_max = np.max(np.abs(shap_values[:, variable_index]))
 
-    distribution = [
-        shap_category_distribution_value(
+
+    i = 0
+    for category in X_unique:
+        result = shap_stats_at_variable_category(
             category,
             variable_index,
             X_variable,
-            shap_values
-        ) for category in X_unique
-    ]
+            shap_values,
+            abs_shap_values
+        ) 
+        abs_shap_relevance[i] = 100 * (
+            result["abs_variable_shap_sum"] / result["abs_all_shap_sum"]
+        )
+        abs_shap_mean_vs_max[i] = 100 * (
+            result["abs_variable_shap_mean"] / abs_variable_shap_max
+        )
+        shap_mean[i] = result["variable_shap_mean"]
+        variable_sample_percentage[i] = 100 * result["sample_length_ratio"]
+        i += 1
+
+    _, ax1 = pl.subplots()
+    width = 0.5
+
     cmap = shap.plots.colors._colors.red_blue
-    colors = cmap(np.linspace(0, 1, len(X_unique)))
+
+    # Normalización que respeta el signo de los valores SHAP:
+    # Valores negativos -> mitad inferior del colormap [0, 0.5]
+    # Valor cero -> punto medio del colormap (0.5)
+    # Valores positivos -> mitad superior del colormap [0.5, 1.0]
+    max_abs_shap = max(abs(np.min(shap_mean)), abs(np.max(shap_mean)))
+    if max_abs_shap > 0:
+        norm_shap_mean = 0.5 + (shap_mean / (2 * max_abs_shap))
+    else:
+        norm_shap_mean = np.full_like(shap_mean, 0.5)
+    colors = cmap(norm_shap_mean)
+
 
     ticks = [str(x) for x in X_unique]
-    p = ax.bar(ticks, distribution, width, color=colors)
-    ax.bar_label(p, label_type='center', color='white', fontsize=8, fmt='%.1f%%')
-    pl.xlabel(f"{variable_name} categories")
-    pl.ylabel(f"Percentage")
-    pl.title(f"{variable_name} SHAP percentage distribution")
+    p = ax1.bar(ticks, abs_shap_relevance, width, color=colors)
+    ax1.bar_label(
+        p, label_type="center", color="white",
+        fontsize=8, fmt="%.1f%%"
+    )
+    ax1.set_ylabel(f"SHAP Relevance (%)", color="blue")
+    ax1.set_xlabel(f"{variable_name} categories")
+    ax1.tick_params(axis="y", labelcolor="blue")
+    ax1.yaxis.set_major_formatter(mtick.PercentFormatter())
+    ax1.spines["top"].set_visible(False)
+    ax1.spines["right"].set_visible(False)
+    ax1.spines["left"].set_visible(False)
+    ax1.grid(axis="y", linestyle=":", linewidth=0.5, alpha=0.5)
 
-    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.tick_params(labelsize=8)
-    pl.grid(axis='y', linestyle=':', linewidth=0.5, alpha=0.5)
+    ax2 = ax1.twinx()
+    # Draw horizontal lines for each category (no interpolation between categories)
+    for i, tick in enumerate(n_ticks):
+        ax2.hlines(
+            y=abs_shap_mean_vs_max[i],
+            xmin=tick - width / 2,
+            xmax=tick + width / 2,
+            color="black",
+            linewidth=2
+        )
+    ax2.set_ylabel(f"SHAP Mean (%)", color="black")
+    ax2.tick_params(axis="y", labelcolor="black")
+    ax2.yaxis.set_major_formatter(mtick.PercentFormatter())
+    # Extend y-axis range slightly beyond data values, clamped to [0, 100]
+    y_min = max(0, np.min(abs_shap_mean_vs_max) - 10)
+    y_max = min(100, np.max(abs_shap_mean_vs_max) + 10)
+    ax2.set_ylim(y_min, y_max)
+    ax2.spines["top"].set_visible(False)
+    ax2.spines["right"].set_visible(False)
+    ax2.spines["left"].set_visible(False)
+
+    # Add a new x axis with labels in variable_label list
+    ax3_labels = [f"{str(value)}%" for value in variable_sample_percentage]
+
+    ax3 = ax1.twiny()
+    ax3.set_xticks(n_ticks)
+    ax3.set_xticklabels(ax3_labels)
+    ax3.set_xlabel(f"{variable_name} category sample size (%)", color="black")
+    ax3.tick_params(axis="x", labelcolor="black")
+    ax3.spines["right"].set_visible(False)
+    ax3.spines["left"].set_visible(False)
+    ax3.set_xlim(ax1.get_xlim())
+
     pl.show()
+
+    return {
+        "abs_shap_relevance": abs_shap_relevance,
+        "abs_shap_mean_vs_max": abs_shap_mean_vs_max,
+        "variable_label": ax3_labels,
+        "norm_shap_mean": norm_shap_mean,
+    }
 
 
 def plot_shap_numerical_distribution(variable_name, X, shap_values, n_bins):
     bins = np.arange(n_bins)
     X_variable = X[variable_name]
 
-    X_max = np.max(X_variable)
-    shap_distribution = np.zeros(n_bins)
-    variable_distribution = np.zeros(n_bins)
+    abs_shap_values = np.abs(shap_values)
+    abs_shap_relevance = np.zeros(n_bins)
+    abs_shap_mean_vs_max = np.zeros(n_bins)
+    shap_mean = np.zeros(n_bins)
+    variable_label = np.zeros(n_bins)
     variable_index = X.columns.get_loc(variable_name)
+    abs_variable_shap_max = np.max(np.abs(shap_values[:, variable_index]))
 
-    variable_shap_values = shap_values[:, variable_index]
     for i in bins:
         starting_percentile = i * 100 / n_bins
         ending_percentile = (i + 1) * 100 / n_bins
-        shap_distribution[i] = shap_percentile_distribution_value(
+        result = shap_stats_at_variable_percentile(
             variable_index,
             X_variable,
             shap_values,
+            abs_shap_values,
             starting_percentile,
             ending_percentile
         )
 
-        starting_percentile_value = np.percentile(
-            variable_shap_values, starting_percentile
+        abs_shap_relevance[i] = 100 * (
+            result["abs_variable_shap_sum"] / result["abs_all_shap_sum"]
         )
-        ending_percentile_value = np.percentile(
-            variable_shap_values, ending_percentile
+        abs_shap_mean_vs_max[i] = 100 * (
+            result["abs_variable_shap_mean"] / abs_variable_shap_max
         )
-        idx_survivors = np.where(
-            (variable_shap_values >= starting_percentile_value)
-            & (variable_shap_values < ending_percentile_value)
-        )[0]
-        variable_mean = X_variable.iloc[idx_survivors].mean()
-        variable_distribution[i] = 100 * variable_mean / X_max
+        shap_mean[i] = result["variable_shap_mean"]
+        variable_label[i] = result["variable_label"]
 
-    fig, ax = pl.subplots()
+    _, ax1 = pl.subplots()
 
     cmap = shap.plots.colors._colors.red_blue
-    colors = cmap(np.linspace(0, 1, n_bins))
-    ax.bar(
-        bins * 100 / n_bins, shap_distribution, color=colors
+
+    # Normalización que respeta el signo de los valores SHAP:
+    # Valores negativos -> mitad inferior del colormap [0, 0.5]
+    # Valor cero -> punto medio del colormap (0.5)
+    # Valores positivos -> mitad superior del colormap [0.5, 1.0]
+    max_abs_shap = max(abs(np.min(shap_mean)), abs(np.max(shap_mean)))
+    if max_abs_shap > 0:
+        norm_shap_mean = 0.5 + (shap_mean / (2 * max_abs_shap))
+    else:
+        norm_shap_mean = np.full_like(shap_mean, 0.5)
+    colors = cmap(norm_shap_mean)
+
+    bar_width = 100 / n_bins * 0.95  # 95% of bin width, leaving 5% margin
+    # Position bars at the center of each bin (percentile range)
+    bar_positions = bins * 100 / n_bins + (100 / n_bins) / 2
+    ax1.bar(
+        bar_positions, abs_shap_relevance, width=bar_width, color=colors,
+        label=f"{variable_name} SHAP relevance vs all", align='center'
     )
-    ax.plot(bins * 100 / n_bins, variable_distribution, color="grey")
+    ax1.set_xlabel(f"{variable_name} percentile")
+    ax1.set_ylabel(f"SHAP Relevance (%)", color="blue")
+    ax1.tick_params(axis="y", labelcolor="blue")
+    ax1.yaxis.set_major_formatter(mtick.PercentFormatter())
+    ax1.set_xlim(0, 100)  # Ensure x-axis shows 0-100 percentile range
+    ax1.spines["top"].set_visible(False)
+    ax1.spines["right"].set_visible(False)
+    ax1.spines["left"].set_visible(False)
+    ax1.grid(axis="y", linestyle=":", linewidth=0.5, alpha=0.5)
 
-    pl.legend([
-        f"{variable_name} mean value percentage",
-        f"{variable_name} SHAP percentage in current percentile"
-    ])
-    pl.xlabel(f"{variable_name} SHAP percentile")
-    pl.ylabel(f"Percentage")
-    pl.title(f"{variable_name} SHAP percentage and value distribution")
+    ax2 = ax1.twinx()
+    ax2.plot(
+        bar_positions, abs_shap_mean_vs_max, color="black",
+        label=f"{variable_name} SHAP mean vs max"
+    )
+    ax2.set_ylabel(f"SHAP Mean (%)", color="black")
+    ax2.tick_params(axis="y", labelcolor="black")
+    ax2.yaxis.set_major_formatter(mtick.PercentFormatter())
+    ax2.spines["top"].set_visible(False)
+    ax2.spines["right"].set_visible(False)
+    ax2.spines["left"].set_visible(False)
 
-    ax.yaxis.set_major_formatter(mtick.PercentFormatter())
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.tick_params(labelsize=8)
-    pl.grid(axis='y', linestyle=':', linewidth=0.5, alpha=0.5)
-    
+    # Determine tick spacing based on number of bins
+    tick_spacing = max(1, n_bins // 5) if n_bins <= 20 else 20
+    ax3_indices = np.arange(0, n_bins, tick_spacing)
+    if ax3_indices[-1] != n_bins - 1:  # Ensure last bin is included
+        ax3_indices = np.append(ax3_indices, n_bins - 1)
+
+    ax3_labels = [f"{variable_label[i]:.1f}" for i in ax3_indices]
+    ax3_tick_positions = bar_positions[ax3_indices]
+
+    ax3 = ax1.twiny()
+    ax3.set_xticks(ax3_tick_positions)
+    ax3.set_xticklabels(ax3_labels)
+    ax3.set_xlabel(f"{variable_name} value", color="black")
+    ax3.tick_params(axis="x", labelcolor="black")
+    ax3.spines["right"].set_visible(False)
+    ax3.spines["left"].set_visible(False)
+    ax3.set_xlim(ax1.get_xlim())
+
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(
+        lines + lines2, labels + labels2,
+        loc="upper left", bbox_to_anchor=(0, -0.2)
+    )
+
     pl.show()
+
+    return {
+        "abs_shap_relevance": abs_shap_relevance,
+        "abs_shap_mean_vs_max": abs_shap_mean_vs_max,
+        "variable_label": variable_label,
+        "norm_shap_mean": norm_shap_mean,
+    }
 
 
 def plot_shap_distribution(variable_name, X, shap_values, n_bins):
     if is_categorical(X[variable_name]):
-        plot_shap_categorical_distribution(
+        return plot_shap_categorical_distribution(
             variable_name, X, shap_values
         )
     else:
-        plot_shap_numerical_distribution(
+        return plot_shap_numerical_distribution(
             variable_name, X, shap_values, n_bins
         )
 
@@ -262,12 +413,11 @@ def plot_shap_interaction_numerical_numerical_distribution(
     pl.xlabel("SHAP Interaction percentile")
     pl.ylabel(f"Percentage")
     pl.title(
-        f"{variable_A_name}, {
-            variable_B_name} SHAP Interaction percentage and value distribution"
+        f"{variable_A_name}, {variable_B_name} SHAP Interaction percentage and value distribution"
     )
 
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
-    
+
     pl.show()
 
 
@@ -364,12 +514,11 @@ def plot_shap_interaction_numerical_categorical_distribution(
     pl.xlabel("SHAP Interaction percentile")
     pl.ylabel(f"Percentage")
     pl.title(
-        f"{variable_A_name}, {
-            variable_B_name} SHAP Interaction percentage and value distribution"
+        f"{variable_A_name}, {variable_B_name} SHAP Interaction percentage and value distribution"
     )
 
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
-    
+
     pl.show()
 
 
@@ -460,12 +609,11 @@ def plot_shap_interaction_categorical_categorical_distribution(
     pl.xlabel("SHAP Interaction percentile")
     pl.ylabel(f"Percentage")
     pl.title(
-        f"{variable_A_name}, {
-            variable_B_name} SHAP Interaction percentage and value distribution"
+        f"{variable_A_name}, {variable_B_name} SHAP Interaction percentage and value distribution"
     )
 
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
-    
+
     pl.show()
 
 
@@ -486,45 +634,70 @@ def plot_shap_interaction_distribution(variable_A_name, variable_B_name, X, shap
             variable_A_name, variable_B_name, X, shap_interaction_values, n_bins
         )
 
+
 def shap_acumulated_importance_value(
-    percentile,
+    X_variable,
     variable_shap_values,
-    variable_index
+    starting_percentile,
+    ending_percentile
 ):
-    percentile_value = np.percentile(
-        variable_shap_values, percentile
-    )
+    starting_percentile_value = np.percentile(variable_shap_values, starting_percentile)
+    ending_percentile_value = np.percentile(variable_shap_values, ending_percentile)
+    idx_survivors_percentile = np.where(
+        (variable_shap_values >= starting_percentile_value) &
+        (variable_shap_values <= ending_percentile_value)
+    )[0]
+    idx_survivors_accumulated = np.where(
+        variable_shap_values <= ending_percentile_value
+    )[0]
 
-    sum_shap_values = np.sum(variable_shap_values)
-    top_variable_shap_values = variable_shap_values[
-        variable_shap_values <= percentile_value
-    ]
+    percentile_accumulated_shap_values = variable_shap_values[idx_survivors_accumulated]
+    percentile_x_values = X_variable.iloc[idx_survivors_percentile]
 
-    return 100 * np.sum(top_variable_shap_values) / sum_shap_values
-
+    return {
+        "percentile_accumulated_shap_values": percentile_accumulated_shap_values,
+        "percentile_x_values": percentile_x_values,
+    }
 
 def plot_shap_lorenz_curve(variable_name, X, shap_values, n_bins):
-    bins = np.arange(n_bins)
+    bins = np.arange(n_bins + 1)
     X_variable = X[variable_name]
 
-    X_max = np.max(X_variable)
-    lorenz_values = np.zeros(n_bins)
+    lorenz_values = np.zeros(n_bins + 1)
+    mean_x_values = np.zeros(n_bins + 1)
     variable_index = X.columns.get_loc(variable_name)
-
     variable_shap_values = shap_values[:, variable_index]
+    shap_sum = np.sum(shap_values[:, variable_index])
+
     for i in bins:
-        percentile = (i + 1) * 100 / n_bins
-        lorenz_values[i] = shap_acumulated_importance_value(
-            percentile, variable_shap_values, variable_index
+        if i == 0:
+            lorenz_values[i] = 0
+            mean_x_values[i] = 0
+            continue
+        starting_percentile = (i - 1) * 100 / n_bins
+        ending_percentile = i * 100 / n_bins
+        result = shap_acumulated_importance_value(
+            X_variable,
+            variable_shap_values,
+            starting_percentile,
+            ending_percentile
         )
+        lorenz_values[i] = 100 * np.sum(result["percentile_accumulated_shap_values"]) / shap_sum
+        mean_x_values[i] = np.mean(result["percentile_x_values"])
 
-    fig, ax = pl.subplots()
+    _, ax = pl.subplots()
 
+    cmap = shap.plots.colors._colors.red_blue
+
+    norm_shap_mean = (mean_x_values - np.min(mean_x_values)) / \
+        (np.max(mean_x_values) - np.min(mean_x_values))
+    colors = cmap(norm_shap_mean)
+
+    bar_width = 100 / n_bins * 0.95  # 95% of bin width, leaving 5% margin
     ax.bar(
-        bins * 100 / n_bins, lorenz_values
+        bins * 100 / n_bins, lorenz_values, width=bar_width, color=colors
     )
     ax.plot(bins * 100 / n_bins, bins * 100 / n_bins, color="green")
-
 
     pl.legend([
         f"Perfect equality",
@@ -537,32 +710,3 @@ def plot_shap_lorenz_curve(variable_name, X, shap_values, n_bins):
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
 
     pl.show()
-
-def violin_plot(
-    df: pd.DataFrame,
-    x: str,
-    y: str,
-    y_title: str
-):
-    '''
-    Plot the SHAP values for each category of the input variable.
-    Parameters:
-    df: pandas.DataFrame
-        The input data.
-    x: str
-        The name of the variable.
-    y: str
-        The name of the SHAP values.
-    y_title: str
-        The title of the y axis.
-    '''
-    fig, ax = plt.subplots(1, 1, figsize=(8, 4))
-    cmap = shap.plots.colors._colors.red_blue
-    colors = cmap(np.linspace(0, 1, len(df[x].unique())))
-    bp = sns.violinplot(x=x, y=y, data=df, ax=ax, palette=colors, fill=False)
-    bp.tick_params(labelsize=6)
-    bp.set(xlabel=x, ylabel=y_title)
-    bp.spines['top'].set_visible(False)
-    bp.spines['right'].set_visible(False)
-    bp.spines['left'].set_visible(False)
-    bp.grid(visible=True, axis='y', linestyle=':', linewidth=0.5, alpha=0.3)
