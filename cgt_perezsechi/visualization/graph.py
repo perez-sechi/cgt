@@ -301,9 +301,9 @@ def get_cmap(n):
         '#2ECC71',  # Green
         '#F39C12',  # Orange
         '#9B59B6',  # Purple
-        '#F1C40F',  # Yellow
-        '#16A085',  # Teal/Green
         '#8B4513',  # Brown
+        '#16A085',  # Teal/Green
+        '#F1C40F',  # Yellow
         '#95A5A6',  # Grey
         '#D4AC0D',  # Dark Yellow/Gold
         '#27AE60',  # Dark Green
