@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pylab as pl
 import matplotlib.ticker as mtick
 
-from package.exploration.schema import is_categorical
+from cgt_perezsechi.exploration.schema import is_categorical
 
 
 def shap_stats_at_variable_percentile(
