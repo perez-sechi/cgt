@@ -234,8 +234,11 @@ def draw(
     else:
         for node in g.nodes():
             x, y = label_pos[node]
+            # Get color for this specific node if label_color is a dict, otherwise use the value directly
+            node_color = 'black' if label_color is None else (label_color.get(node, 'black') if isinstance(label_color, dict) else label_color)
+            node_weight = label_weight.get(node, 'normal') if isinstance(label_weight, dict) else (label_weight if label_weight is not None else 'normal')
             plt.text(
-                x, y, s=node, color='black' if label_color is None else label_color,
+                x, y, s=node, color=node_color, fontweight=node_weight,
                 horizontalalignment='center'
             )
 
@@ -583,8 +586,11 @@ def draw_clusters(
     else:
         for node in g.nodes():
             x, y = label_pos[node]
+            # Get color for this specific node if label_color is a dict, otherwise use the value directly
+            node_color = 'black' if label_color is None else (label_color.get(node, 'black') if isinstance(label_color, dict) else label_color)
+            node_weight = label_weight.get(node, 'normal') if isinstance(label_weight, dict) else (label_weight if label_weight is not None else 'normal')
             plt.text(
-                x, y, s=node, color='black' if label_color is None else label_color,
+                x, y, s=node, color=node_color, fontweight=node_weight,
                 horizontalalignment='center'
             )
 
