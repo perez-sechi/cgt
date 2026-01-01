@@ -355,7 +355,7 @@ def detect_communities(
     seed: Optional[int] = None,
     weight_attribute: str = 'weight',
     return_graph: bool = False
-) -> Dict[str, int] | Tuple[Dict[str, int], nx.Graph]:
+) -> List[set] | Tuple[List[set], nx.Graph]:
     """
     Detect communities in a network from its normalized adjacency matrix using Louvain algorithm.
 
@@ -377,20 +377,8 @@ def detect_communities(
 
     Returns
     -------
-    community_map : dict
-        Dictionary mapping each node to its community ID (integer)
-    G : nx.Graph, optional
-        The NetworkX graph object (if return_graph=True)
-
-    Examples
-    --------
-    >>> M = normalize_weighted_adjacency(I)
-    >>> community_map = detect_communities(M, nodes=["A", "B", "C"])
-    >>> print(community_map)
-    {'A': 0, 'B': 0, 'C': 1}
-
-    >>> # With graph return
-    >>> community_map, G = detect_communities(M, nodes=["A", "B", "C"], return_graph=True)
+    communities : list of sets
+        List of sets, each containing the nodes in a detected community.
     """
     n = M.shape[0]
 
@@ -420,13 +408,4 @@ def detect_communities(
         seed=seed
     )
 
-    # Create community map: node -> community_id
-    community_map = {}
-    for cid, comm in enumerate(communities):
-        for node in comm:
-            community_map[node] = cid
-
-    if return_graph:
-        return community_map, G
-
-    return community_map
+    return communities
