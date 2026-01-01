@@ -3,6 +3,8 @@ import numpy as np
 import networkx as nx
 from itertools import permutations
 from random import randint, sample
+from typing import Tuple, Optional, Dict, List
+import networkx.algorithms.community as nx_comm
 
 
 def communities_from_index(community_index):
@@ -176,3 +178,255 @@ def duo_louvain(A, R):
             communities[cdx] = new_community
 
     return communities
+
+
+def normalize_weighted_adjacency(
+    I: np.ndarray,
+    alpha1: float = 0.5,
+    alpha2: float = 0.5,
+    return_coefficients: bool = False
+) -> np.ndarray | Tuple[np.ndarray, dict]:
+    """
+    Normalize a weighted adjacency matrix with positive and negative relations.
+
+    This function splits positive and negative relations, finds the maximum absolute
+    value of negative relations, computes normalization coefficients and constants,
+    and builds the resulting normalized adjacency matrix.
+
+    Parameters
+    ----------
+    I : np.ndarray
+        Input interaction/adjacency matrix (n x n) with positive and negative values.
+        Diagonal is assumed to be zero.
+    alpha1 : float, optional
+        Weight parameter for positive relations (default: 0.5)
+    alpha2 : float, optional
+        Weight parameter for negative relations (default: 0.5)
+    return_coefficients : bool, optional
+        If True, return coefficients and constants used in normalization (default: False)
+
+    Returns
+    -------
+    M : np.ndarray
+        Normalized adjacency matrix (n x n)
+    coefficients : dict, optional
+        Dictionary containing normalization parameters (if return_coefficients=True):
+        - 'Amas': sum of positive edge weights
+        - 'Amenos': sum of absolute negative edge weights
+        - 'Pmas': proportion of positive weights
+        - 'Pmenos': proportion of negative weights
+        - 'coefmas': coefficient for positive edges
+        - 'coefmenos': coefficient for negative edges
+        - 'ctePositivos': constant added to all edges
+        - 'max_abs_negative': maximum absolute value among negative edges
+
+    Examples
+    --------
+    >>> I = np.array([[0, 0.5, -0.3], [0.5, 0, 0.2], [-0.3, 0.2, 0]])
+    >>> M = normalize_weighted_adjacency(I, alpha1=0.5, alpha2=0.5)
+    >>> M, info = normalize_weighted_adjacency(I, return_coefficients=True)
+    """
+    n = I.shape[0]
+
+    # Validate input
+    if I.shape[0] != I.shape[1]:
+        raise ValueError("Input matrix must be square")
+
+    # Extract upper triangular part (excluding diagonal) to avoid double counting
+    # since the matrix should be symmetric
+    upper_tri_mask = np.triu(np.ones_like(I, dtype=bool), k=1)
+
+    # Split positive and negative edges
+    positive_mask = (I > 0) & upper_tri_mask
+    negative_mask = (I < 0) & upper_tri_mask
+
+    # Calculate sums
+    Amas = np.sum(I[positive_mask])
+    Amenos = np.sum(np.abs(I[negative_mask]))
+
+    # Handle edge case where there are no positive or negative edges
+    if Amas == 0 and Amenos == 0:
+        return (np.zeros_like(I), {}) if return_coefficients else np.zeros_like(I)
+
+    # Calculate proportions
+    total_weight = Amas + Amenos
+    Pmas = Amas / total_weight if total_weight > 0 else 0
+    Pmenos = Amenos / total_weight if total_weight > 0 else 0
+
+    # Find maximum absolute value among negative edges
+    if np.any(negative_mask):
+        max_abs_negative = np.max(np.abs(I[negative_mask]))
+    else:
+        max_abs_negative = 0
+
+    # Calculate number of possible edges in complete graph
+    num_possible_edges = n * (n - 1) // 2
+
+    # Calculate coefficients
+    if Amas > 0:
+        coefmas = alpha1 * Pmas / Amas
+    else:
+        coefmas = 0
+
+    if max_abs_negative > 0 and Amenos > 0:
+        denominator = num_possible_edges * max_abs_negative - Amenos
+        if denominator > 0:
+            coefmenos = alpha2 * Pmenos / denominator
+        else:
+            coefmenos = 0
+    else:
+        coefmenos = 0
+
+    # Calculate constant
+    ctePositivos = coefmenos * max_abs_negative
+
+    # Build normalized matrix
+    M = np.zeros_like(I, dtype=float)
+
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                M[i, j] = 0  # Keep diagonal as zero
+            elif I[i, j] > 0:
+                # Positive edge
+                M[i, j] = coefmas * I[i, j] + ctePositivos
+            elif I[i, j] < 0:
+                # Negative edge
+                M[i, j] = ctePositivos - np.abs(I[i, j]) * coefmenos
+            else:
+                # Zero edge (no relation in original matrix)
+                M[i, j] = ctePositivos
+
+    if return_coefficients:
+        coefficients = {
+            'Amas': Amas,
+            'Amenos': Amenos,
+            'Pmas': Pmas,
+            'Pmenos': Pmenos,
+            'coefmas': coefmas,
+            'coefmenos': coefmenos,
+            'ctePositivos': ctePositivos,
+            'max_abs_negative': max_abs_negative,
+            'num_possible_edges': num_possible_edges
+        }
+        return M, coefficients
+
+    return M
+
+
+def get_edge_list_from_normalized_matrix(
+    M: np.ndarray,
+    nodes: list,
+    include_zero_edges: bool = True
+) -> list:
+    """
+    Extract edge list from normalized adjacency matrix.
+
+    Parameters
+    ----------
+    M : np.ndarray
+        Normalized adjacency matrix (n x n)
+    nodes : list
+        List of node labels
+    include_zero_edges : bool, optional
+        Whether to include edges with zero weight (default: True)
+
+    Returns
+    -------
+    edges : list
+        List of tuples (source, target, weight)
+    """
+    n = M.shape[0]
+    edges = []
+
+    # Extract upper triangular part to avoid duplicates
+    for i in range(n):
+        for j in range(i + 1, n):
+            if include_zero_edges or M[i, j] != 0:
+                edges.append((nodes[i], nodes[j], M[i, j]))
+
+    return edges
+
+
+def detect_communities(
+    M: np.ndarray,
+    nodes: Optional[List[str]] = None,
+    resolution: float = 1.0,
+    seed: Optional[int] = None,
+    weight_attribute: str = 'weight',
+    return_graph: bool = False
+) -> Dict[str, int] | Tuple[Dict[str, int], nx.Graph]:
+    """
+    Detect communities in a network from its normalized adjacency matrix using Louvain algorithm.
+
+    Parameters
+    ----------
+    M : np.ndarray
+        Normalized adjacency matrix (n x n). All values should be non-negative.
+    nodes : list of str, optional
+        List of node labels. If None, nodes will be labeled as 0, 1, 2, ..., n-1
+    resolution : float, optional
+        Resolution parameter for Louvain algorithm. Higher values lead to more communities.
+        Default is 1.0. The original code uses 0.65.
+    seed : int, optional
+        Random seed for reproducibility. Default is None.
+    weight_attribute : str, optional
+        Name of the edge attribute to use as weight (default: 'weight')
+    return_graph : bool, optional
+        If True, also return the NetworkX graph object (default: False)
+
+    Returns
+    -------
+    community_map : dict
+        Dictionary mapping each node to its community ID (integer)
+    G : nx.Graph, optional
+        The NetworkX graph object (if return_graph=True)
+
+    Examples
+    --------
+    >>> M = normalize_weighted_adjacency(I)
+    >>> community_map = detect_communities(M, nodes=["A", "B", "C"])
+    >>> print(community_map)
+    {'A': 0, 'B': 0, 'C': 1}
+
+    >>> # With graph return
+    >>> community_map, G = detect_communities(M, nodes=["A", "B", "C"], return_graph=True)
+    """
+    n = M.shape[0]
+
+    # Validate input
+    if M.shape[0] != M.shape[1]:
+        raise ValueError("Input matrix must be square")
+
+    # Generate default node labels if not provided
+    if nodes is None:
+        nodes = [str(i) for i in range(n)]
+    elif len(nodes) != n:
+        raise ValueError(f"Number of nodes ({len(nodes)}) must match matrix size ({n})")
+
+    # Build NetworkX graph from adjacency matrix
+    G = nx.Graph()
+    G.add_nodes_from(nodes)
+
+    # Add weighted edges from the adjacency matrix
+    edge_list = get_edge_list_from_normalized_matrix(M, nodes, include_zero_edges=True)
+    G.add_weighted_edges_from(edge_list, weight=weight_attribute)
+
+    # Run Louvain community detection
+    communities = nx_comm.louvain_communities(
+        G,
+        weight=weight_attribute,
+        resolution=resolution,
+        seed=seed
+    )
+
+    # Create community map: node -> community_id
+    community_map = {}
+    for cid, comm in enumerate(communities):
+        for node in comm:
+            community_map[node] = cid
+
+    if return_graph:
+        return community_map, G
+
+    return community_map
