@@ -328,7 +328,7 @@ def draw_clusters(
     node_pos=None, label_pos=None, label_color=None,
     label_weight=None, positive_color='black',
     negative_color='red', output_path=None, plot_margin=None,
-    node_label_size_limit=500
+    node_label_size_limit=500, group_by_clusters=True
 ):
     '''
     Draws the shapley matrices of Psi and R
@@ -441,7 +441,7 @@ def draw_clusters(
         plt.margins(x=plot_margin, y=plot_margin)
 
     if len(clusters) > 0:
-        if node_pos == None:
+        if node_pos == None and group_by_clusters == True:
             # Create well-separated cluster centers
             num_clusters = len(clusters)
             cluster_centers = []
