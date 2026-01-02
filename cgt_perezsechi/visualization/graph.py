@@ -229,7 +229,8 @@ def draw(
 
             plt.text(
                 x_label_pos, y_label_pos, s=node,
-                horizontalalignment='center'
+                horizontalalignment='center',
+                verticalalignment='center'
             )
     else:
         for node in g.nodes():
@@ -239,7 +240,8 @@ def draw(
             node_weight = label_weight.get(node, 'normal') if isinstance(label_weight, dict) else (label_weight if label_weight is not None else 'normal')
             plt.text(
                 x, y, s=node, color=node_color, fontweight=node_weight,
-                horizontalalignment='center'
+                horizontalalignment='center',
+                verticalalignment='center'
             )
 
     # Draw edges
@@ -489,6 +491,7 @@ def draw_clusters(
 
         legend_elements = []
         cmap = get_cmap(len(clusters))
+        node_to_cluster_color = {}  # Map each node to its cluster color
         for cdx, cluster_nodes in enumerate(clusters):
             color = matplotlib.colors.rgb2hex(cmap(cdx))
             cluster_node_size = [node_size_dict[node] for node in cluster_nodes]
@@ -496,6 +499,10 @@ def draw_clusters(
                 g, pos=pos, nodelist=cluster_nodes,
                 node_color=color, node_size=cluster_node_size
             )
+
+            # Map each node in this cluster to its color
+            for node in cluster_nodes:
+                node_to_cluster_color[node] = color
 
             legend_elements.append(
                 Line2D(
@@ -509,6 +516,7 @@ def draw_clusters(
             node_size=node_size,
             node_color=node_color
         )
+        node_to_cluster_color = {}  # Empty dict when no clusters
     if label_pos == None:
         nx.draw_networkx_labels(
             g, pos,
@@ -518,14 +526,21 @@ def draw_clusters(
             font_color='white' if label_color is None else label_color,
             font_weight='bold' if label_weight is None else label_weight
         )
-        nx.draw_networkx_labels(
-            g, pos,
-            labels={node: node for node in g.nodes(
-            ) if node_size_dict[node] == 0},
-            font_size=10,
-            font_color='black' if label_color is None else label_color,
-            font_weight='bold' if label_weight is None else label_weight
-        )
+        # Draw labels for zero-size nodes using cluster colors
+        for node in g.nodes():
+            if node_size_dict[node] == 0:
+                x, y = pos[node]
+                # Use cluster color if available, otherwise use label_color or black
+                if node in node_to_cluster_color:
+                    color = node_to_cluster_color[node]
+                else:
+                    color = 'black' if label_color is None else label_color
+                weight = 'bold' if label_weight is None else label_weight
+                plt.text(
+                    x, y, s=node, color=color, fontweight=weight,
+                    fontsize=10, horizontalalignment='center',
+                    verticalalignment='center'
+                )
 
         x_max = max([x for x, y in pos.values()])
         y_max = max([y for x, y in pos.values()])
@@ -581,17 +596,29 @@ def draw_clusters(
 
             plt.text(
                 x_label_pos, y_label_pos, s=node,
-                horizontalalignment='center'
+                horizontalalignment='center',
+                verticalalignment='center'
             )
     else:
         for node in g.nodes():
             x, y = label_pos[node]
-            # Get color for this specific node if label_color is a dict, otherwise use the value directly
-            node_color = 'black' if label_color is None else (label_color.get(node, 'black') if isinstance(label_color, dict) else label_color)
+            # Get color for this specific node
+            # For zero-size nodes, use cluster color if available
+            if node_size_dict[node] == 0 and node in node_to_cluster_color:
+                node_color = node_to_cluster_color[node]
+            elif label_color is None:
+                node_color = 'black'
+            elif isinstance(label_color, dict):
+                # Use cluster color as fallback for size-0 nodes, otherwise use 'black'
+                default_color = node_to_cluster_color.get(node, 'black') if node_size_dict[node] == 0 else 'black'
+                node_color = label_color.get(node, default_color)
+            else:
+                node_color = label_color
             node_weight = label_weight.get(node, 'normal') if isinstance(label_weight, dict) else (label_weight if label_weight is not None else 'normal')
             plt.text(
                 x, y, s=node, color=node_color, fontweight=node_weight,
-                horizontalalignment='center'
+                horizontalalignment='center',
+                verticalalignment='center'
             )
 
     if symmetric:
