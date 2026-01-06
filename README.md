@@ -556,7 +556,7 @@ pytest cgt_perezsechi_tests/modeling/test_cluster.py
 
 ## Version
 
-Current version: **0.0.12**
+Current version: **1.0.1**
 
 ---
 
