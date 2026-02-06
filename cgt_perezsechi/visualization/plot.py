@@ -3,8 +3,29 @@ import numpy as np
 import pandas as pd
 import matplotlib.pylab as pl
 import matplotlib.ticker as mtick
+from matplotlib.patches import Patch, Rectangle
+from matplotlib.legend_handler import HandlerPatch
+import matplotlib.patches as mpatches
 
 from cgt_perezsechi.exploration.schema import is_categorical
+
+
+class HandlerColormap(HandlerPatch):
+    def __init__(self, cmap, num_stripes=8, **kw):
+        HandlerPatch.__init__(self, **kw)
+        self.cmap = cmap
+        self.num_stripes = num_stripes
+    
+    def create_artists(self, legend, orig_handle,
+                       xdescent, ydescent, width, height, fontsize, trans):
+        stripes = []
+        for i in range(self.num_stripes):
+            s = Rectangle([xdescent + i * width / self.num_stripes, ydescent],
+                          width / self.num_stripes, height,
+                          fc=self.cmap(i / (self.num_stripes - 1)),
+                          transform=trans)
+            stripes.append(s)
+        return stripes
 
 
 def shap_stats_at_variable_percentile(
@@ -165,7 +186,8 @@ def plot_shap_categorical_distribution(variable_name, X, shap_values):
 
 
     ticks = [str(x) for x in X_unique]
-    p = ax1.bar(ticks, abs_shap_relevance, width, color=colors)
+    p = ax1.bar(ticks, abs_shap_relevance, width, color=colors,
+                label=f"{variable_name} SHAP relevance vs all")
     ax1.bar_label(
         p, label_type="center", color="white",
         fontsize=8, fmt="%.1f%%"
@@ -187,7 +209,8 @@ def plot_shap_categorical_distribution(variable_name, X, shap_values):
             xmin=tick - width / 2,
             xmax=tick + width / 2,
             color="black",
-            linewidth=2
+            linewidth=2,
+            label=f"{variable_name} SHAP mean vs max" if i == 0 else ""
         )
     ax2.set_ylabel(f"SHAP Mean (%)", color="black")
     ax2.tick_params(axis="y", labelcolor="black")
@@ -211,6 +234,16 @@ def plot_shap_categorical_distribution(variable_name, X, shap_values):
     ax3.spines["right"].set_visible(False)
     ax3.spines["left"].set_visible(False)
     ax3.set_xlim(ax1.get_xlim())
+
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    # Replace the bar legend handle with a gradient patch
+    lines[0] = Rectangle((0, 0), 1, 1)
+    ax2.legend(
+        lines + lines2, labels + labels2,
+        handler_map={Rectangle: HandlerColormap(cmap, num_stripes=50)},
+        loc="upper left", bbox_to_anchor=(0, -0.2)
+    )
 
     pl.show()
 
@@ -319,8 +352,11 @@ def plot_shap_numerical_distribution(variable_name, X, shap_values, n_bins):
 
     lines, labels = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
+    # Replace the bar legend handle with a gradient patch
+    lines[0] = Rectangle((0, 0), 1, 1)
     ax2.legend(
         lines + lines2, labels + labels2,
+        handler_map={Rectangle: HandlerColormap(cmap, num_stripes=50)},
         loc="upper left", bbox_to_anchor=(0, -0.2)
     )
 
@@ -693,16 +729,24 @@ def plot_shap_lorenz_curve(variable_name, X, shap_values, n_bins):
         (np.max(mean_x_values) - np.min(mean_x_values))
     colors = cmap(norm_shap_mean)
 
-    bar_width = 100 / n_bins * 0.95  # 95% of bin width, leaving 5% margin
+    bar_width = 100 / n_bins * 0.85  # 85% of bin width, leaving 5% margin
     ax.bar(
-        bins * 100 / n_bins, lorenz_values, width=bar_width, color=colors
+        bins * 100 / n_bins, lorenz_values, width=bar_width, color=colors,
+        label=f"Accumulated SHAP"
     )
-    ax.plot(bins * 100 / n_bins, bins * 100 / n_bins, color="green")
+    ax.plot(bins * 100 / n_bins, bins * 100 / n_bins, color="green",
+            label=f"Perfect equality")
 
-    pl.legend([
-        f"Perfect equality",
-        f"Accumulated SHAP"
-    ])
+    lines, labels = ax.get_legend_handles_labels()
+    # Replace the bar legend handle (Accumulated SHAP) with a gradient patch
+    shap_idx = labels.index("Accumulated SHAP")
+    lines[shap_idx] = Rectangle((0, 0), 1, 1)
+    ax.legend(
+        lines, labels,
+        handler_map={Rectangle: HandlerColormap(cmap, num_stripes=50)},
+        loc="upper left"
+    )
+    
     pl.xlabel(f"SHAP percentile")
     pl.ylabel(f"Percentage")
     pl.title(f"{variable_name} SHAP Lorenz curve")
