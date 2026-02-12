@@ -159,21 +159,37 @@ def draw(
     )
     
     if label_pos == None:
+        large_labels = {node: node for node in g.nodes() if node_size_dict[node] > node_label_size_limit}
+        if isinstance(label_color, dict):
+            large_font_color = {node: label_color.get(node, 'white') for node in large_labels}
+        else:
+            large_font_color = 'white' if label_color is None else label_color
+        if isinstance(label_weight, dict):
+            large_font_weight = {node: label_weight.get(node, 'bold') for node in large_labels}
+        else:
+            large_font_weight = 'bold' if label_weight is None else label_weight
         nx.draw_networkx_labels(
             g, pos,
-            labels={node: node for node in g.nodes(
-            ) if node_size_dict[node] > node_label_size_limit},
+            labels=large_labels,
             font_size=10,
-            font_color='white' if label_color is None else label_color,
-            font_weight='bold' if label_weight is None else label_weight
+            font_color=large_font_color,
+            font_weight=large_font_weight
         )
+        zero_labels = {node: node for node in g.nodes() if node_size_dict[node] == 0}
+        if isinstance(label_color, dict):
+            zero_font_color = {node: label_color.get(node, 'black') for node in zero_labels}
+        else:
+            zero_font_color = 'black' if label_color is None else label_color
+        if isinstance(label_weight, dict):
+            zero_font_weight = {node: label_weight.get(node, 'bold') for node in zero_labels}
+        else:
+            zero_font_weight = 'bold' if label_weight is None else label_weight
         nx.draw_networkx_labels(
             g, pos,
-            labels={node: node for node in g.nodes(
-            ) if node_size_dict[node] == 0},
+            labels=zero_labels,
             font_size=10,
-            font_color='black' if label_color is None else label_color,
-            font_weight='bold' if label_weight is None else label_weight
+            font_color=zero_font_color,
+            font_weight=zero_font_weight
         )
 
         x_max = max([x for x, y in pos.values()])
