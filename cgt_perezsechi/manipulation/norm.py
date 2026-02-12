@@ -5,7 +5,7 @@ def normalize_psi(psi):
     return psi
 
 def normalize_r(r):
-    max_edge_width = r.applymap(lambda x: abs(x)).max().max()
-    r = r.copy().applymap(lambda x: x / max_edge_width)
+    max_edge_width = r.map(lambda x: abs(x)).max().max()
+    r = r.copy().map(lambda x: x / max_edge_width)
 
     return r

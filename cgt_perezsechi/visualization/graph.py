@@ -88,8 +88,8 @@ def draw(
             # Fallback to original logic
             return negative_color if r[v][u] < 0 else positive_color
 
-    r = r.copy().applymap(filter_edge)
-    adjacency = r.copy().applymap(lambda x: 1 if x != 0 else 0)
+    r = r.copy().map(filter_edge)
+    adjacency = r.copy().map(lambda x: 1 if x != 0 else 0)
     g = nx.from_pandas_adjacency(adjacency, create_using=nx.DiGraph)
 
     nodes = g.nodes()
@@ -365,8 +365,8 @@ def draw_clusters(
         else:
             return False
 
-    r = r.copy().applymap(filter_edge)
-    adjacency = r.copy().applymap(lambda x: 1 if x != 0 else 0)
+    r = r.copy().map(filter_edge)
+    adjacency = r.copy().map(lambda x: 1 if x != 0 else 0)
     g = nx.from_pandas_adjacency(adjacency, create_using=nx.DiGraph)
 
     nodes = g.nodes()
